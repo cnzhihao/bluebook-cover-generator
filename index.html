@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>蓝皮书封面生成工具</title>
+<style>
+  :root{
+    --ui-bg:#f3f6fb;
+    --panel:#ffffff;
+    --panel-2:#f8fafc;
+    --line:#d8e0ea;
+    --text:#172033;
+    --muted:#667085;
+    --primary:#123b6d;
+    --radius:18px;
+    --shadow:0 18px 50px rgba(16,24,40,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+    background:linear-gradient(180deg,#eef3fa 0%,#f8fafc 100%);
+    color:var(--text);
+  }
+  header.app-header{
+    position:sticky;top:0;z-index:10;
+    backdrop-filter:blur(18px);
+    background:rgba(255,255,255,.78);
+    border-bottom:1px solid rgba(216,224,234,.9);
+    padding:16px 24px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand-mark{
+    width:38px;height:38px;border-radius:12px;
+    background:linear-gradient(135deg,#0b2948,#154d8a);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 10px 24px rgba(18,59,109,.22);
+    position:relative;flex:0 0 auto;
+  }
+  .brand-mark:after{content:"";position:absolute;left:9px;right:9px;top:18px;height:3px;background:#e9c44c;border-radius:99px}
+  .brand h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+  .header-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  button,.file-btn{
+    border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;
+    font-size:13px;transition:.18s ease;display:inline-flex;align-items:center;gap:8px;
+  }
+  button.primary{background:#123b6d;color:#fff;box-shadow:0 10px 22px rgba(18,59,109,.20)}
+  button.secondary,.file-btn{background:#eef3fa;color:#123b6d;border:1px solid #d8e0ea}
+  button:hover,.file-btn:hover{transform:translateY(-1px)}
+  button:active,.file-btn:active{transform:translateY(0)}
+  input[type=file]{display:none}
+
+  .workspace{display:grid;grid-template-columns:430px minmax(520px,1fr);gap:22px;padding:22px;align-items:start}
+  .panel{background:var(--panel);border:1px solid rgba(216,224,234,.9);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .control-panel{position:sticky;top:88px;max-height:calc(100vh - 110px);overflow:auto}
+  .panel-title{padding:18px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff,#f8fafc)}
+  .panel-title h2{font-size:15px;margin:0 0 4px;font-weight:850}
+  .panel-title p{font-size:12px;margin:0;color:var(--muted);line-height:1.45}
+  .section{padding:18px 20px;border-bottom:1px solid #edf1f6}
+  .section:last-child{border-bottom:0}
+  .section h3{font-size:13px;margin:0 0 12px;font-weight:850;color:#25324a;display:flex;align-items:center;gap:8px}
+  .section h3:before{content:"";width:8px;height:8px;border-radius:50%;background:#d2aa31;box-shadow:0 0 0 4px rgba(210,170,49,.12)}
+  .field{margin-bottom:12px}
+  .field:last-child{margin-bottom:0}
+  label{display:block;font-size:12px;color:#475467;font-weight:700;margin:0 0 6px}
+  input[type=text],textarea,select,input[type=number]{
+    width:100%;border:1px solid #cfd8e5;background:#fff;border-radius:12px;padding:10px 11px;
+    font-size:13px;color:#101828;outline:none;transition:.15s ease;
+  }
+  textarea{min-height:72px;resize:vertical;line-height:1.55}
+  input:focus,textarea:focus,select:focus{border-color:#2c6fb7;box-shadow:0 0 0 4px rgba(44,111,183,.12)}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .range-row{display:grid;grid-template-columns:1fr 56px;gap:10px;align-items:center}
+  input[type=range]{width:100%;accent-color:#123b6d}
+  input[type=color]{width:100%;height:42px;border:1px solid #cfd8e5;border-radius:12px;padding:4px;background:#fff;cursor:pointer}
+  .hint{font-size:11px;color:#7a8799;line-height:1.4;margin-top:5px}
+  .template-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .template-card{
+    border:1px solid #d8e0ea;background:#fff;border-radius:14px;padding:10px;cursor:pointer;transition:.16s ease;
+    display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;
+  }
+  .template-card:hover{border-color:#9cb9d6;transform:translateY(-1px)}
+  .template-card.active{border-color:#123b6d;box-shadow:0 0 0 4px rgba(18,59,109,.10)}
+  .swatch{height:42px;border-radius:10px;border:1px solid rgba(0,0,0,.08)}
+  .template-card strong{font-size:12px;display:block;margin-bottom:2px}
+  .template-card span{font-size:11px;color:var(--muted)}
+  .preview-panel{padding:22px;display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 110px)}
+  .preview-shell{width:min(100%,640px);}
+  .cover-frame{background:#0b1220;border-radius:20px;padding:16px;box-shadow:0 28px 70px rgba(15,23,42,.25)}
+  svg#coverSvg{display:block;width:100%;height:auto;border-radius:6px;background:#0b2948}
+  .preview-note{font-size:12px;color:#667085;text-align:center;margin-top:12px;line-height:1.5}
+  .toggle-row{display:flex;align-items:center;gap:9px}
+  .toggle-row input{width:17px;height:17px;accent-color:#123b6d}
+  .small-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .small-actions button{font-size:12px;padding:8px 10px}
+  @media(max-width:980px){
+    .workspace{grid-template-columns:1fr;padding:14px}
+    .control-panel{position:static;max-height:none}
+    .preview-panel{min-height:auto}
+    header.app-header{position:static;align-items:flex-start;flex-direction:column}
+    .header-actions{justify-content:flex-start}
+  }
+  @media print{
+    body{background:#fff}
+    header.app-header,.control-panel,.preview-note{display:none!important}
+    .workspace{display:block;padding:0}
+    .preview-panel{box-shadow:none;border:0;padding:0;display:block}
+    .cover-frame{padding:0;box-shadow:none;border-radius:0;background:transparent}
+    svg#coverSvg{width:100vw;border-radius:0}
+  }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div>
+      <h1>蓝皮书封面生成工具</h1>
+      <p>填写字段、调整视觉风格，一键导出 PNG / SVG。</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="secondary" id="resetBtn" type="button">恢复默认</button>
+    <button class="secondary" id="exportSvgBtn" type="button">导出 SVG</button>
+    <button class="primary" id="exportPngBtn" type="button">导出 PNG</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <aside class="panel control-panel">
+    <div class="panel-title">
+      <h2>封面信息</h2>
+      <p>左侧输入内容，右侧实时预览。标题、摘要和英文标题会自动换行并在必要时自动缩放。</p>
+    </div>
+
+    <section class="section">
+      <h3>基础字段</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="volume">卷号 / 期号</label>
+          <input id="volume" type="text" value="VOL. 01" />
+        </div>
+        <div class="field">
+          <label for="topTag">顶部标签</label>
+          <input id="topTag" type="text" value="数字化交付与部署战略参考" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="series">系列名称</label>
+        <input id="series" type="text" value="前沿部署工程（FDE）企业实践蓝皮书系列" />
+      </div>
+      <div class="field">
+        <label for="title">蓝皮书主标题</label>
+        <textarea id="title">前沿部署工程（FDE）
+企业实践蓝皮书</textarea>
+      </div>
+      <div class="field">
+        <label for="subtitle">副标题 / 研究主题说明</label>
+        <textarea id="subtitle">企业数字化转型下半场：如何通过敏捷工程与产品部署双循环驱动降本增效</textarea>
+      </div>
+      <div class="field">
+        <label for="englishTitle">英文标题 / 国际化标题</label>
+        <textarea id="englishTitle">FORWARD DEPLOYED ENGINEERING (FDE) ENTERPRISE BEST PRACTICES BLUE BOOK</textarea>
+      </div>
+    </section>
+
+    <section class="section">
+      <h3>署名与归属</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="authorLabel">署名说明</label>
+          <input id="authorLabel" type="text" value="研究联合编纂" />
+        </div>
+        <div class="field">
+          <label for="date">发布日期</label>
+          <input id="date" type="text" value="2026年6月" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="org">机构 / 出品方</label>
+          <input id="org" type="text" value="FHXQTECH" />
+        </div>
+        <div class="field">
+          <label for="author">作者 / 署名</label>
+          <input id="author" type="text" value="徐智昊" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="version">版本号 / 适用对象 / 备注</label>
+        <input id="version" type="text" value="V1.0 · 面向企业主、业务负责人、产品与交付团队" />
+      </div>
+      <div class="field">
+        <label for="tags">关键词标签，使用逗号分隔</label>
+        <input id="tags" type="text" value="AI 工作流, 前沿部署, 企业转型, 降本增效" />
+      </div>
+    </section>
+
+    <section class="section">
+      <h3>封面模板</h3>
+      <div class="template-row" id="templateRow">
+        <div class="template-card active" data-template="blueGold"><div class="swatch" style="background:linear-gradient(135deg,#082542,#123b6d 70%,#d9b641)"></div><div><strong>深蓝金线</strong><span>正式蓝皮书</span></div></div>
+        <div class="template-card" data-template="blackGold"><div class="swatch" style="background:linear-gradient(135deg,#0a0d12,#1d2633 70%,#d6b65a)"></div><div><strong>黑金咨询</strong><span>高端商务</span></div></div>
+        <div class="template-card" data-template="green"><div class="swatch" style="background:linear-gradient(135deg,#06322f,#0f5a50 70%,#c7ad63)"></div><div><strong>墨绿智库</strong><span>研究报告</span></div></div>
+        <div class="template-card" data-template="light"><div class="swatch" style="background:linear-gradient(135deg,#f7f3e8,#e5edf8 70%,#1f4e7a)"></div><div><strong>浅色学术</strong><span>清爽传播</span></div></div>
+      </div>
+      <div class="small-actions">
+        <button class="secondary" type="button" id="randomStyleBtn">随机微调色彩</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h3>颜色与质感</h3>
+      <div class="grid-3">
+        <div class="field">
+          <label for="bgColor">背景色</label>
+          <input id="bgColor" type="color" value="#0b2b4c" />
+        </div>
+        <div class="field">
+          <label for="accentColor">强调色</label>
+          <input id="accentColor" type="color" value="#e4bd3f" />
+        </div>
+        <div class="field">
+          <label for="titleColor">标题色</label>
+          <input id="titleColor" type="color" value="#ffffff" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="textColor">正文色</label>
+          <input id="textColor" type="color" value="#d8e3f2" />
+        </div>
+        <div class="field">
+          <label for="lineColor">线框色</label>
+          <input id="lineColor" type="color" value="#6f7f93" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="textureOpacity">纸张颗粒质感</label>
+        <div class="range-row"><input id="textureOpacity" type="range" min="0" max="60" value="18" /><input id="textureOpacityNum" type="number" min="0" max="60" value="18" /></div>
+      </div>
+      <div class="field">
+        <label for="vignetteOpacity">暗角强度</label>
+        <div class="range-row"><input id="vignetteOpacity" type="range" min="0" max="80" value="32" /><input id="vignetteOpacityNum" type="number" min="0" max="80" value="32" /></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h3>花纹、水印与版式</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="pattern">装饰花纹</label>
+          <select id="pattern">
+            <option value="circles" selected>几何圆环</option>
+            <option value="grid">工程网格</option>
+            <option value="waves">弧形波纹</option>
+            <option value="none">无花纹</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="layout">标题版式</label>
+          <select id="layout">
+            <option value="classic" selected>经典左对齐</option>
+            <option value="center">居中仪式感</option>
+            <option value="compact">紧凑商务版</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="watermark">水印文字</label>
+        <input id="watermark" type="text" value="BLUE BOOK" />
+      </div>
+      <div class="field">
+        <label for="watermarkOpacity">水印透明度</label>
+        <div class="range-row"><input id="watermarkOpacity" type="range" min="0" max="40" value="10" /><input id="watermarkOpacityNum" type="number" min="0" max="40" value="10" /></div>
+      </div>
+      <div class="field">
+        <label for="patternOpacity">花纹透明度</label>
+        <div class="range-row"><input id="patternOpacity" type="range" min="0" max="80" value="26" /><input id="patternOpacityNum" type="number" min="0" max="80" value="26" /></div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="titleSize">主标题字号</label>
+          <div class="range-row"><input id="titleSize" type="range" min="44" max="86" value="66" /><input id="titleSizeNum" type="number" min="44" max="86" value="66" /></div>
+        </div>
+        <div class="field">
+          <label for="fontStyle">字体气质</label>
+          <select id="fontStyle">
+            <option value="serif" selected>宋体标题</option>
+            <option value="sans">黑体现代</option>
+            <option value="mixed">标题宋体 + 正文黑体</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h3>Logo 与导出</h3>
+      <div class="field">
+        <label class="file-btn" for="logoUpload">上传 Logo / 机构标识</label>
+        <input id="logoUpload" type="file" accept="image/*" />
+        <div class="hint">Logo 会显示在右上角标签附近。建议上传透明 PNG。</div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="exportScale">PNG 导出倍率</label>
+          <select id="exportScale">
+            <option value="1">1×：800×1131</option>
+            <option value="2" selected>2×：1600×2262</option>
+            <option value="3">3×：2400×3393</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filename">文件名</label>
+          <input id="filename" type="text" value="蓝皮书封面" />
+        </div>
+      </div>
+      <div class="toggle-row">
+        <input id="showTags" type="checkbox" checked />
+        <label for="showTags" style="margin:0">显示关键词标签</label>
+      </div>
+      <div class="toggle-row" style="margin-top:10px">
+        <input id="showBorder" type="checkbox" checked />
+        <label for="showBorder" style="margin:0">显示专业线框</label>
+      </div>
+    </section>
+  </aside>
+
+  <section class="panel preview-panel">
+    <div class="preview-shell">
+      <div class="cover-frame">
+        <svg id="coverSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1131" width="800" height="1131" role="img" aria-label="蓝皮书封面预览">
+          <defs>
+            <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+              <stop id="bgStop1" offset="0" stop-color="#082542" />
+              <stop id="bgStop2" offset="1" stop-color="#123b6d" />
+            </linearGradient>
+            <radialGradient id="vignette" cx="50%" cy="42%" r="75%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+              <stop offset="70%" stop-color="#000000" stop-opacity="0.04"/>
+              <stop id="vignetteStop" offset="100%" stop-color="#000000" stop-opacity="0.32"/>
+            </radialGradient>
+            <filter id="paperNoise" x="0" y="0" width="100%" height="100%">
+              <feTurbulence id="noiseTurbulence" type="fractalNoise" baseFrequency="0.82" numOctaves="3" seed="8" result="noise"/>
+              <feColorMatrix type="saturate" values="0"/>
+              <feComponentTransfer>
+                <feFuncA id="noiseAlpha" type="table" tableValues="0 0.18"/>
+              </feComponentTransfer>
+            </filter>
+            <clipPath id="logoClip"><rect id="logoClipRect" x="0" y="0" width="72" height="44" rx="8" ry="8"/></clipPath>
+          </defs>
+          <rect id="bgRect" width="800" height="1131" fill="url(#bgGradient)"/>
+          <rect width="800" height="1131" fill="url(#vignette)"/>
+          <rect id="textureRect" width="800" height="1131" filter="url(#paperNoise)" opacity="1"/>
+
+          <g id="patternCircles" opacity=".26">
+            <circle cx="405" cy="592" r="282" fill="none" stroke="#6f7f93" stroke-width="1.8"/>
+            <circle cx="405" cy="592" r="242" fill="none" stroke="#6f7f93" stroke-width="1"/>
+            <circle cx="405" cy="592" r="120" fill="none" stroke="#6f7f93" stroke-width=".8"/>
+            <path d="M405 310V854M154 592H655" fill="none" stroke="#6f7f93" stroke-width="1"/>
+          </g>
+          <g id="patternGrid" opacity=".24" style="display:none">
+            <path d="M92 190H708M92 306H708M92 422H708M92 538H708M92 654H708M92 770H708M92 886H708M92 1002H708" stroke="#6f7f93" stroke-width=".9"/>
+            <path d="M110 166V982M226 166V982M342 166V982M458 166V982M574 166V982M690 166V982" stroke="#6f7f93" stroke-width=".9"/>
+          </g>
+          <g id="patternWaves" opacity=".25" style="display:none">
+            <path d="M70 630 C220 480, 350 760, 520 600 S720 560, 820 700" fill="none" stroke="#6f7f93" stroke-width="1.4"/>
+            <path d="M-30 705 C170 520, 360 810, 545 640 S760 610, 850 750" fill="none" stroke="#6f7f93" stroke-width="1"/>
+            <path d="M-10 500 C190 340, 360 620, 560 470 S760 430, 850 570" fill="none" stroke="#6f7f93" stroke-width=".9"/>
+          </g>
+
+          <g id="borderGroup">
+            <path d="M98 165V975M706 165V975" stroke="#6f7f93" stroke-opacity=".42" stroke-width="2"/>
+            <path d="M84 655H625M84 958H720" stroke="#6f7f93" stroke-opacity=".50" stroke-width="1.4"/>
+            <path d="M456 370H706V773H456z" fill="none" stroke="#6f7f93" stroke-opacity=".18" stroke-width="1.5"/>
+          </g>
+
+          <text id="watermarkText" x="432" y="620" fill="#ffffff" font-size="94" font-family="Georgia, 'Times New Roman', serif" font-weight="700" letter-spacing="5" text-anchor="middle" opacity=".06" transform="rotate(-18 432 620)">BLUE BOOK</text>
+
+          <g id="topGroup">
+            <text id="volumeText" x="83" y="104" fill="#e4bd3f" font-size="30" font-family="Baskerville, Georgia, 'Times New Roman', serif" font-weight="700" letter-spacing="5" style="font-variant-numeric: lining-nums tabular-nums;">VOL. 01</text>
+            <rect id="volumeLine" x="83" y="121" width="88" height="4" fill="#e4bd3f"/>
+            <g id="topTagGroup">
+              <g id="logoGroup" transform="translate(648 84)" style="display:none">
+                <image id="logoImage" href="" x="0" y="0" width="72" height="44" preserveAspectRatio="xMidYMid meet" clip-path="url(#logoClip)"/>
+              </g>
+              <rect id="topTagBox" x="455" y="84" width="265" height="44" rx="8" fill="none" stroke="#d8e3f2" stroke-opacity=".42" stroke-width="1.5"/>
+              <text id="topTagText" x="588" y="113" fill="#ffffff" font-size="19" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-weight="760" text-anchor="middle">数字化交付与部署战略参考</text>
+            </g>
+          </g>
+
+          <g id="mainContent" transform="translate(84 0)">
+            <g id="seriesGroup"></g>
+            <g id="titleGroup"></g>
+            <rect id="accentBar" x="0" y="474" width="145" height="7" fill="#e4bd3f"/>
+            <g id="subtitleGroup"></g>
+            <g id="tagGroup"></g>
+            <g id="englishGroup"></g>
+          </g>
+
+          <g id="footerGroup">
+            <text id="authorLabelText" x="84" y="1010" fill="#d8e3f2" font-size="21" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" opacity=".86" font-weight="650">研究联合编纂</text>
+            <text id="authorText" x="84" y="1052" fill="#ffffff" font-size="28" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-weight="900" letter-spacing="1.2">FHXQTECH / 徐智昊</text>
+            <text id="dateText" x="720" y="1054" fill="#d8e3f2" font-size="23" font-family="'SFMono-Regular',Consolas,'Liberation Mono',monospace" font-weight="800" text-anchor="end">2026年6月</text>
+            <text id="versionText" x="84" y="1083" fill="#d8e3f2" font-size="14" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" opacity=".70">V1.0 · 面向企业主、业务负责人、产品与交付团队</text>
+          </g>
+        </svg>
+      </div>
+      <div class="preview-note">建议导出 2× PNG 用于朋友圈、公众号头图、PDF 封面；需要印刷或二次编辑时导出 SVG。</div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const $ = (id) => document.getElementById(id);
+  const controls = [
+    'volume','topTag','series','title','subtitle','englishTitle','authorLabel','date','org','author','version','tags',
+    'bgColor','accentColor','titleColor','textColor','lineColor','textureOpacity','vignetteOpacity','pattern','layout','watermark','watermarkOpacity','patternOpacity','titleSize','fontStyle','showTags','showBorder'
+  ];
+  let logoData = '';
+  let logoAspectRatio = 72 / 44;
+
+  const templates = {
+    blueGold:{bg:'#0b2b4c',accent:'#e4bd3f',title:'#ffffff',text:'#d8e3f2',line:'#6f7f93'},
+    blackGold:{bg:'#080b10',accent:'#d6b65a',title:'#ffffff',text:'#d9deea',line:'#7c8495'},
+    green:{bg:'#06322f',accent:'#c7ad63',title:'#fffdf6',text:'#dbe8df',line:'#7d9a8f'},
+    light:{bg:'#f7f3e8',accent:'#1f4e7a',title:'#122033',text:'#3b4758',line:'#8ca0b3'}
+  };
+
+  function serifStack(){ return "Songti SC, STSong, SimSun, Noto Serif CJK SC, Baskerville, Georgia, serif"; }
+  function sansStack(){ return "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif"; }
+  function englishSerifStack(){ return "Baskerville, Georgia, 'Times New Roman', serif"; }
+  function monoStack(){ return "'SFMono-Regular', Consolas, 'Liberation Mono', monospace"; }
+  function titleFont(){ return $('fontStyle').value === 'sans' ? sansStack() : serifStack(); }
+  function bodyFont(){ return $('fontStyle').value === 'serif' ? serifStack() : sansStack(); }
+  function splitManualLines(text){ return String(text || '').replace(/\r/g,'').split('\n').map(s=>s.trim()).filter(Boolean); }
+  function charWidth(ch){
+    if(/[A-Z0-9]/.test(ch)) return .62;
+    if(/[a-z]/.test(ch)) return .52;
+    if(/\s/.test(ch)) return .32;
+    if(/[.,，。:：;；·/()（）\-]/.test(ch)) return .38;
+    return 1;
+  }
+  function visualLength(str){ return [...String(str || '')].reduce((sum,ch)=>sum + charWidth(ch), 0); }
+  function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+  function setText(el, text){ if(el) el.textContent = text || ''; }
+  function clamp(num, min, max){ return Math.max(min, Math.min(max, num)); }
+  function hexToRgb(hex){ const v = hex.replace('#',''); return [parseInt(v.slice(0,2),16), parseInt(v.slice(2,4),16), parseInt(v.slice(4,6),16)]; }
+  function rgbToHex([r,g,b]){ return '#' + [r,g,b].map(v => clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join(''); }
+  function shade(hex, amount){ return rgbToHex(hexToRgb(hex).map(v => v + amount)); }
+
+  function wrapLineChars(line, maxUnits){
+    const parts = [];
+    let current = '';
+    for(const ch of [...line]){
+      if(visualLength(current + ch) > maxUnits && current){
+        parts.push(current.trim());
+        current = ch;
+      } else {
+        current += ch;
+      }
+    }
+    if(current.trim()) parts.push(current.trim());
+    return parts.length ? parts : [''];
+  }
+
+  function wrapTextChars(text, maxUnits, maxLines=99){
+    const out = [];
+    const lines = splitManualLines(text);
+    if(!lines.length) return [];
+    lines.forEach(line => out.push(...wrapLineChars(line, maxUnits)));
+    if(out.length > maxLines){
+      const sliced = out.slice(0, maxLines);
+      sliced[maxLines - 1] = sliced[maxLines - 1].replace(/[。,.，；;、\s]*$/,'') + '…';
+      return sliced;
+    }
+    return out;
+  }
+
+  function wrapWordsLine(line, maxUnits){
+    const words = String(line || '').trim().split(/\s+/).filter(Boolean);
+    if(!words.length) return [];
+    const out = [];
+    let current = '';
+    for(const word of words){
+      if(!current){
+        if(visualLength(word) <= maxUnits){
+          current = word;
+        } else {
+          const parts = wrapLineChars(word, maxUnits);
+          out.push(...parts.slice(0, -1));
+          current = parts[parts.length - 1] || '';
+        }
+        continue;
+      }
+      const candidate = current + ' ' + word;
+      if(visualLength(candidate) <= maxUnits){
+        current = candidate;
+      } else {
+        out.push(current);
+        if(visualLength(word) <= maxUnits){
+          current = word;
+        } else {
+          const parts = wrapLineChars(word, maxUnits);
+          out.push(...parts.slice(0, -1));
+          current = parts[parts.length - 1] || '';
+        }
+      }
+    }
+    if(current) out.push(current);
+    return out;
+  }
+
+  function wrapTextWords(text, maxUnits, maxLines=99){
+    const out = [];
+    const lines = splitManualLines(String(text || '').toUpperCase());
+    if(!lines.length) return [];
+    lines.forEach(line => out.push(...wrapWordsLine(line, maxUnits)));
+    if(out.length > maxLines){
+      const sliced = out.slice(0, maxLines);
+      sliced[maxLines - 1] = sliced[maxLines - 1].replace(/[.\s-]*$/,'') + '…';
+      return sliced;
+    }
+    return out;
+  }
+
+  function fitBlock({text, baseSize, minSize, step=2, baseUnits, maxLines, wrapper}){
+    let size = baseSize;
+    let lines = [];
+    while(size >= minSize){
+      const scale = baseSize / size;
+      const units = baseUnits * scale;
+      lines = wrapper(text, units, maxLines);
+      if(lines.length <= maxLines) break;
+      size -= step;
+    }
+    if(lines.length > maxLines){
+      lines = lines.slice(0, maxLines);
+      lines[maxLines - 1] = lines[maxLines - 1].replace(/[。,.，；;、\s-]*$/,'') + '…';
+    }
+    return {lines, size};
+  }
+
+  function fitSingleLine(text, baseSize, minSize, maxWidth, family='sans'){
+    let size = baseSize;
+    while(size >= minSize){
+      const width = visualLength(text) * size * (family === 'serif' ? 0.62 : 0.9);
+      if(width <= maxWidth) return {size, width, text};
+      size -= 1;
+    }
+    let result = String(text || '');
+    while(result.length > 2 && visualLength(result + '…') * minSize * (family === 'serif' ? 0.62 : 0.9) > maxWidth){
+      result = result.slice(0, -1);
+    }
+    return {size:minSize, width:maxWidth, text:result + (result !== text ? '…' : '')};
+  }
+
+  function addSvgText(parent, attrs){
+    const t = document.createElementNS(svgNS, 'text');
+    Object.entries(attrs).forEach(([key, val]) => {
+      if(key === 'text') t.textContent = val;
+      else if(val !== undefined && val !== null) t.setAttribute(key, val);
+    });
+    parent.appendChild(t);
+    return t;
+  }
+
+  function syncRange(id){
+    const range = $(id), num = $(id+'Num');
+    if(!range || !num) return;
+    const sync = (from) => {
+      if(from === 'range') num.value = range.value;
+      else range.value = num.value;
+      update();
+    };
+    range.addEventListener('input',()=>sync('range'));
+    num.addEventListener('input',()=>sync('num'));
+  }
+  ['textureOpacity','vignetteOpacity','watermarkOpacity','patternOpacity','titleSize'].forEach(syncRange);
+
+  function getLayoutSpec(){
+    const layout = $('layout').value;
+    const spec = {
+      anchor:'start',
+      mainTransform:'translate(84 0)',
+      titleUnits:14.8,
+      subtitleUnits:24,
+      englishUnits:24.5,
+      seriesUnits:30,
+      topTagX:455,
+      topTagY:84,
+      topTagHeight:44,
+      accentWidth:160,
+      tagMaxWidth:545
+    };
+    if(layout === 'center'){
+      Object.assign(spec, {
+        anchor:'middle',
+        mainTransform:'translate(400 0)',
+        titleUnits:13.2,
+        subtitleUnits:22,
+        englishUnits:22.5,
+        seriesUnits:26,
+        accentWidth:170,
+        tagMaxWidth:500
+      });
+    } else if(layout === 'compact'){
+      Object.assign(spec, {
+        titleUnits:15.6,
+        subtitleUnits:26,
+        englishUnits:26,
+        seriesUnits:32,
+        accentWidth:128,
+        tagMaxWidth:560
+      });
+    }
+    return spec;
+  }
+
+  function renderTopTag(spec, titleColor, textColor){
+    const horizontalPadding = 22;
+    const logoW = logoData ? spec.topTagHeight * logoAspectRatio : 0;
+    const logoInnerGap = 14;
+    // Let the tag grow left when a logo is present instead of squeezing the label.
+    const available = logoData ? Math.max(430, logoW + logoInnerGap + horizontalPadding * 2 + 80) : 290;
+    const rightEdge = spec.topTagX + 290;
+    const textAvailForFit = available - logoW - horizontalPadding * 2;
+    const fitted = fitSingleLine($('topTag').value, 18, 13, textAvailForFit, 'sans');
+    const box = $('topTagBox');
+    const text = $('topTagText');
+    text.setAttribute('x', 0);
+    text.setAttribute('y', spec.topTagY + 29);
+    text.setAttribute('font-size', fitted.size);
+    text.setAttribute('font-family', sansStack());
+    text.setAttribute('fill', titleColor);
+    text.setAttribute('font-weight', '760');
+    text.setAttribute('text-anchor', 'start');
+    text.textContent = fitted.text;
+
+    const sideGap = logoData ? logoInnerGap : horizontalPadding;
+    const maxRenderedTextWidth = available - logoW - sideGap * 2;
+    let measuredTextWidth = text.getComputedTextLength();
+    if(measuredTextWidth > maxRenderedTextWidth && fitted.size > 13){
+      const adjustedSize = Math.max(13, fitted.size * maxRenderedTextWidth / measuredTextWidth);
+      text.setAttribute('font-size', adjustedSize);
+      measuredTextWidth = text.getComputedTextLength();
+    }
+    if(measuredTextWidth > maxRenderedTextWidth){
+      let shortened = fitted.text.replace(/…$/, '');
+      while(shortened.length > 2 && measuredTextWidth > maxRenderedTextWidth){
+        shortened = shortened.slice(0, -1);
+        text.textContent = shortened + '…';
+        measuredTextWidth = text.getComputedTextLength();
+      }
+    }
+    const contentWidth = measuredTextWidth + sideGap * 2 + logoW;
+    const boxWidth = logoData ? Math.min(contentWidth, available) : available;
+    const boxX = rightEdge - boxWidth;
+    box.setAttribute('x', boxX);
+    box.setAttribute('y', spec.topTagY);
+    box.setAttribute('width', boxWidth);
+    box.setAttribute('height', spec.topTagHeight);
+    box.setAttribute('stroke', textColor);
+    box.setAttribute('rx', 8);
+    box.setAttribute('stroke-opacity', '.42');
+    text.setAttribute('x', logoData ? boxX + sideGap : boxX + boxWidth / 2);
+    text.setAttribute('text-anchor', logoData ? 'start' : 'middle');
+    if(logoData){
+      const logoX = boxX + boxWidth - logoW;
+      $('logoGroup').style.display = '';
+      $('logoImage').setAttribute('href', logoData);
+      $('logoImage').setAttribute('width', logoW);
+      $('logoImage').setAttribute('height', spec.topTagHeight);
+      $('logoClipRect').setAttribute('width', logoW);
+      $('logoClipRect').setAttribute('height', spec.topTagHeight);
+      $('logoClipRect').setAttribute('rx', 8);
+      $('logoClipRect').setAttribute('ry', 8);
+      $('logoGroup').setAttribute('transform', `translate(${logoX} ${spec.topTagY})`);
+    } else {
+      $('logoGroup').style.display = 'none';
+    }
+  }
+
+  function renderSeries(spec, textColor){
+    const group = $('seriesGroup'); clear(group);
+    const series = fitBlock({
+      text: $('series').value,
+      baseSize: 25,
+      minSize: 21,
+      step: 1,
+      baseUnits: spec.seriesUnits,
+      maxLines: 2,
+      wrapper: wrapTextChars
+    });
+    const lineHeight = Math.round(series.size * 1.3);
+    const startY = 300;
+    series.lines.forEach((line, i) => {
+      addSvgText(group, {
+        x:0,
+        y:startY + i * lineHeight,
+        text:line,
+        fill:textColor,
+        'font-size':series.size,
+        'font-family':bodyFont(),
+        'font-weight':'560',
+        opacity:'0.82',
+        'letter-spacing':'1.1',
+        'text-anchor':spec.anchor
+      });
+    });
+    return {
+      bottomY: series.lines.length ? startY + (series.lines.length - 1) * lineHeight : startY,
+      lineHeight,
+      size:series.size
+    };
+  }
+
+  function renderTitle(spec, titleColor, seriesInfo){
+    const baseSize = +$('titleSize').value;
+    const title = fitBlock({
+      text: $('title').value,
+      baseSize,
+      minSize: 46,
+      step: 2,
+      baseUnits: spec.titleUnits,
+      maxLines: 3,
+      wrapper: wrapTextChars
+    });
+    const group = $('titleGroup'); clear(group);
+    const lineHeight = Math.round(title.size * 1.06);
+    const seriesToTitleGap = Math.round(title.size * 0.8 + seriesInfo.size * 0.2 + 40);
+    const titleStartY = Math.max(390, seriesInfo.bottomY + seriesToTitleGap);
+    title.lines.forEach((line, i) => {
+      addSvgText(group, {
+        x:0,
+        y:titleStartY + i * lineHeight,
+        text:line,
+        fill:titleColor,
+        'font-size':title.size,
+        'font-family':titleFont(),
+        'font-weight':'840',
+        'text-anchor':spec.anchor,
+        'letter-spacing': $('fontStyle').value === 'sans' ? '0' : '-0.8'
+      });
+    });
+    return {
+      bottomY: titleStartY + (Math.max(0, title.lines.length - 1) * lineHeight)
+    };
+  }
+
+  function renderSubtitle(spec, textColor, afterY){
+    const group = $('subtitleGroup'); clear(group);
+    const subtitle = fitBlock({
+      text: $('subtitle').value,
+      baseSize: 27,
+      minSize: 21,
+      step: 1,
+      baseUnits: spec.subtitleUnits,
+      maxLines: 3,
+      wrapper: wrapTextChars
+    });
+    const lineHeight = Math.round(subtitle.size * 1.56);
+    const startY = afterY + 68;
+    subtitle.lines.forEach((line, i) => {
+      addSvgText(group, {
+        x:0,
+        y:startY + i * lineHeight,
+        text:line,
+        fill:textColor,
+        'font-size':subtitle.size,
+        'font-family':bodyFont(),
+        'font-weight':'430',
+        opacity:'0.98',
+        'letter-spacing':'0.5',
+        'text-anchor':spec.anchor
+      });
+    });
+    return { bottomY: startY + (Math.max(0, subtitle.lines.length - 1) * lineHeight) };
+  }
+
+  function renderTags(spec, textColor, accent, afterY){
+    const group = $('tagGroup'); clear(group);
+    if(!$('showTags').checked) return {bottomY: afterY, shown:false};
+    const tags = $('tags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean).slice(0, 4);
+    if(!tags.length) return {bottomY: afterY, shown:false};
+    const y = afterY + 40;
+    const pillGap = 10;
+    let widths = tags.map(tag => clamp(visualLength(tag) * 11.2 + 20, 52, 120));
+    let total = widths.reduce((a,b)=>a+b,0) + pillGap * (tags.length - 1);
+    if(total > spec.tagMaxWidth){
+      const scale = spec.tagMaxWidth / total;
+      widths = widths.map(w => Math.max(48, w * scale));
+      total = widths.reduce((a,b)=>a+b,0) + pillGap * (tags.length - 1);
+    }
+    let x = spec.anchor === 'middle' ? -total / 2 : 0;
+    tags.forEach((tag, i) => {
+      const w = widths[i];
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y - 21);
+      rect.setAttribute('width', w);
+      rect.setAttribute('height', 28);
+      rect.setAttribute('rx', 14);
+      rect.setAttribute('fill', accent);
+      rect.setAttribute('opacity', '.10');
+      rect.setAttribute('stroke', accent);
+      rect.setAttribute('stroke-opacity', '.18');
+      group.appendChild(rect);
+      addSvgText(group, {
+        x:x + w/2,
+        y:y - 2,
+        text:tag,
+        fill:textColor,
+        'font-size':'12.5',
+        'font-family':sansStack(),
+        'font-weight':'700',
+        opacity:'0.90',
+        'text-anchor':'middle'
+      });
+      x += w + pillGap;
+    });
+    return {bottomY:y + 10, shown:true};
+  }
+
+  function renderEnglish(spec, textColor, lineColor, afterY){
+    const group = $('englishGroup'); clear(group);
+    const english = fitBlock({
+      text: $('englishTitle').value,
+      baseSize: 24,
+      minSize: 16,
+      step: 1,
+      baseUnits: spec.englishUnits,
+      maxLines: 3,
+      wrapper: wrapTextWords
+    });
+    if(!english.lines.length) return;
+    const dividerY = afterY + 26;
+    const line = document.createElementNS(svgNS, 'path');
+    line.setAttribute('d', spec.anchor === 'middle' ? `M-260 ${dividerY}H260` : `M0 ${dividerY}H540`);
+    line.setAttribute('stroke', lineColor);
+    line.setAttribute('stroke-opacity', '.46');
+    line.setAttribute('stroke-width', '1.2');
+    group.appendChild(line);
+    const lineHeight = Math.round(english.size * 1.42);
+    const startY = dividerY + 50;
+    english.lines.forEach((ln, i) => {
+      addSvgText(group, {
+        x:0,
+        y:startY + i * lineHeight,
+        text:ln,
+        fill:textColor,
+        'font-size':english.size,
+        'font-family':englishSerifStack(),
+        'font-weight':'500',
+        opacity:'0.80',
+        'letter-spacing':'0.45',
+        'text-anchor':spec.anchor
+      });
+    });
+  }
+
+  function update(){
+    const bg = $('bgColor').value;
+    const accent = $('accentColor').value;
+    const titleColor = $('titleColor').value;
+    const textColor = $('textColor').value;
+    const lineColor = $('lineColor').value;
+    const spec = getLayoutSpec();
+
+    $('bgStop1').setAttribute('stop-color', shade(bg, -8));
+    $('bgStop2').setAttribute('stop-color', shade(bg, 32));
+    $('vignetteStop').setAttribute('stop-opacity', (+$('vignetteOpacity').value / 100).toFixed(2));
+    $('noiseAlpha').setAttribute('tableValues', `0 ${+$('textureOpacity').value / 100}`);
+    $('textureRect').setAttribute('opacity', Math.max(0.4, +$('textureOpacity').value / 18).toFixed(2));
+
+    $('volumeText').setAttribute('fill', accent);
+    $('volumeLine').setAttribute('fill', accent);
+    $('volumeText').setAttribute('font-family', englishSerifStack());
+    $('volumeText').setAttribute('font-weight', '700');
+    $('volumeText').setAttribute('letter-spacing', '5');
+    $('volumeText').setAttribute('font-size', '30');
+    $('volumeText').textContent = $('volume').value.toUpperCase();
+    $('accentBar').setAttribute('fill', accent);
+
+    $('authorLabelText').setAttribute('fill', textColor);
+    $('authorText').setAttribute('fill', titleColor);
+    $('dateText').setAttribute('fill', textColor);
+    $('versionText').setAttribute('fill', textColor);
+    $('authorLabelText').setAttribute('font-family', bodyFont());
+    $('authorText').setAttribute('font-family', sansStack());
+    $('dateText').setAttribute('font-family', monoStack());
+    $('versionText').setAttribute('font-family', bodyFont());
+
+    ['patternCircles','patternGrid','patternWaves'].forEach(id => {
+      $(id).querySelectorAll('circle,path').forEach(el => el.setAttribute('stroke', lineColor));
+      $(id).setAttribute('opacity', (+$('patternOpacity').value / 100).toFixed(2));
+      $(id).style.display = 'none';
+    });
+    const pattern = $('pattern').value;
+    if(pattern === 'circles') $('patternCircles').style.display = '';
+    if(pattern === 'grid') $('patternGrid').style.display = '';
+    if(pattern === 'waves') $('patternWaves').style.display = '';
+
+    $('borderGroup').style.display = $('showBorder').checked ? '' : 'none';
+    $('borderGroup').querySelectorAll('path').forEach(el => el.setAttribute('stroke', lineColor));
+
+    $('mainContent').setAttribute('transform', spec.mainTransform);
+    renderTopTag(spec, titleColor, textColor);
+
+    $('watermarkText').textContent = $('watermark').value;
+    $('watermarkText').setAttribute('fill', titleColor);
+    $('watermarkText').setAttribute('opacity', (+$('watermarkOpacity').value / 100).toFixed(2));
+
+    setText($('authorLabelText'), $('authorLabel').value);
+    setText($('authorText'), `${$('org').value}${$('org').value && $('author').value ? ' / ' : ''}${$('author').value}`);
+    setText($('dateText'), $('date').value);
+    setText($('versionText'), $('version').value);
+
+    const seriesInfo = renderSeries(spec, textColor);
+    const titleInfo = renderTitle(spec, titleColor, seriesInfo);
+
+    const accentY = titleInfo.bottomY + 48;
+    $('accentBar').setAttribute('x', spec.anchor === 'middle' ? -spec.accentWidth/2 : 0);
+    $('accentBar').setAttribute('y', accentY);
+    $('accentBar').setAttribute('width', spec.accentWidth);
+    $('accentBar').setAttribute('height', '7');
+
+    const subtitleInfo = renderSubtitle(spec, textColor, accentY);
+    const tagsInfo = renderTags(spec, textColor, accent, subtitleInfo.bottomY);
+    renderEnglish(spec, textColor, lineColor, tagsInfo.shown ? tagsInfo.bottomY + 18 : subtitleInfo.bottomY + 28);
+  }
+
+  controls.forEach(id => {
+    const el = $(id);
+    if(!el) return;
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', update);
+    if(el.tagName === 'SELECT') el.addEventListener('change', update);
+  });
+
+  $('templateRow').addEventListener('click', (e) => {
+    const card = e.target.closest('.template-card');
+    if(!card) return;
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    const t = templates[card.dataset.template];
+    $('bgColor').value = t.bg;
+    $('accentColor').value = t.accent;
+    $('titleColor').value = t.title;
+    $('textColor').value = t.text;
+    $('lineColor').value = t.line;
+    update();
+  });
+
+  $('randomStyleBtn').addEventListener('click', () => {
+    const palette = [
+      ['#082542','#e4bd3f','#ffffff','#d8e3f2','#6f7f93'],
+      ['#10253c','#d8a84e','#fffaf0','#cdd9e8','#778ba3'],
+      ['#0f1c2e','#c9a24d','#f7f8ff','#cfd7e4','#748196'],
+      ['#062e3b','#e0b45c','#ffffff','#d7e6ec','#6e8b97'],
+      ['#182033','#d4b15f','#fffdf5','#dde1ea','#7e8796']
+    ];
+    const p = palette[Math.floor(Math.random() * palette.length)];
+    ['bgColor','accentColor','titleColor','textColor','lineColor'].forEach((id, i) => $(id).value = p[i]);
+    update();
+  });
+
+  $('logoUpload').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        logoData = reader.result;
+        const ratio = image.naturalWidth / image.naturalHeight;
+        logoAspectRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 72 / 44;
+        update();
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function getSvgString(){
+    update();
+    const svg = $('coverSvg').cloneNode(true);
+    svg.setAttribute('xmlns', svgNS);
+    svg.setAttribute('width', '800');
+    svg.setAttribute('height', '1131');
+    svg.querySelectorAll('*').forEach(el => {
+      if(el.style && el.style.display === 'none') el.setAttribute('display', 'none');
+    });
+    return new XMLSerializer().serializeToString(svg);
+  }
+
+  function downloadBlob(blob, filename){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 500);
+  }
+
+  function safeName(){ return ($('filename').value || '蓝皮书封面').replace(/[\\/:*?"<>|]/g, '-'); }
+
+  $('exportSvgBtn').addEventListener('click', () => {
+    const svgStr = getSvgString();
+    downloadBlob(new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'}), safeName() + '.svg');
+  });
+
+  $('exportPngBtn').addEventListener('click', () => {
+    const svgStr = getSvgString();
+    const scale = +$('exportScale').value;
+    const img = new Image();
+    const svgBlob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 800 * scale;
+      canvas.height = 1131 * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => downloadBlob(blob, safeName() + '.png'), 'image/png');
+    };
+    img.onerror = () => { alert('导出失败：请尝试先导出 SVG，或移除异常 Logo 后重试。'); URL.revokeObjectURL(url); };
+    img.src = url;
+  });
+
+  $('resetBtn').addEventListener('click', () => {
+    if(!confirm('确认恢复默认内容和样式？')) return;
+    location.reload();
+  });
+
+  update();
+})();
+</script>
+
+</body>
+</html>
