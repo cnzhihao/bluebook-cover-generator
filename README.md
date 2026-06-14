@@ -32,7 +32,7 @@ opencli doctor
 opencli plugin install file:///absolute/path/to/bluebook-cover-generator/opencli-plugin
 
 # 从 GitHub 安装本仓库中的子目录
-opencli plugin install github:cnzhihao/bluebook-cover-generator/opencli-plugin
+opencli plugin install github:cnzhihao/bluebook-cover-generator/bluebook-cover-generator
 
 opencli bluebook-cover-generator --help
 ```
