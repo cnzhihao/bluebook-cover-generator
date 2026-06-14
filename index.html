@@ -41,7 +41,12 @@
   .brand-mark:after{content:"";position:absolute;left:9px;right:9px;top:18px;height:3px;background:#e9c44c;border-radius:99px}
   .brand h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}
-  .header-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .header-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+  .opencli-notice{
+    color:#17603a;background:#e9f8ef;border:1px solid #b9e6ca;border-radius:999px;
+    padding:7px 10px;font-size:12px;font-weight:750;white-space:nowrap;
+  }
+  button.agent-prompt{background:#fff8df;color:#765500;border-color:#ead58a}
   button,.file-btn{
     border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;
     font-size:13px;transition:.18s ease;display:inline-flex;align-items:center;gap:8px;
@@ -119,10 +124,12 @@
     <div class="brand-mark"></div>
     <div>
       <h1>蓝皮书封面生成工具</h1>
-      <p>填写字段、调整视觉风格，一键导出 PNG / SVG。</p>
+      <p>填写字段、调整视觉风格，一键导出 PNG / SVG。现已支持 OpenCLI 调用。</p>
     </div>
   </div>
   <div class="header-actions">
+    <span class="opencli-notice">现已支持 OpenCLI 调用</span>
+    <button class="secondary agent-prompt" id="copyAgentPromptBtn" type="button">复制 Agent 提示词</button>
     <button class="secondary" id="resetBtn" type="button">恢复默认</button>
     <button class="secondary" id="exportSvgBtn" type="button">导出 SVG</button>
     <button class="primary" id="exportPngBtn" type="button">导出 PNG</button>
@@ -431,6 +438,8 @@
     green:{bg:'#06322f',accent:'#c7ad63',title:'#fffdf6',text:'#dbe8df',line:'#7d9a8f'},
     light:{bg:'#f7f3e8',accent:'#1f4e7a',title:'#122033',text:'#3b4758',line:'#8ca0b3'}
   };
+  const rangeIds = ['textureOpacity','vignetteOpacity','watermarkOpacity','patternOpacity','titleSize'];
+  const textControlIds = controls.filter(id => !rangeIds.includes(id) && !['showTags','showBorder'].includes(id));
 
   function serifStack(){ return "Songti SC, STSong, SimSun, Noto Serif CJK SC, Baskerville, Georgia, serif"; }
   function sansStack(){ return "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif"; }
@@ -581,7 +590,46 @@
     range.addEventListener('input',()=>sync('range'));
     num.addEventListener('input',()=>sync('num'));
   }
-  ['textureOpacity','vignetteOpacity','watermarkOpacity','patternOpacity','titleSize'].forEach(syncRange);
+  rangeIds.forEach(syncRange);
+
+  function applyTemplate(templateId){
+    const template = templates[templateId];
+    if(!template) throw new Error(`未知模板: ${templateId}`);
+    document.querySelectorAll('.template-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.template === templateId);
+    });
+    $('bgColor').value = template.bg;
+    $('accentColor').value = template.accent;
+    $('titleColor').value = template.title;
+    $('textColor').value = template.text;
+    $('lineColor').value = template.line;
+  }
+
+  function setLogoDataUrl(dataUrl){
+    return new Promise((resolve, reject) => {
+      if(!dataUrl){
+        logoData = '';
+        logoAspectRatio = 72 / 44;
+        update();
+        resolve();
+        return;
+      }
+      if(!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(dataUrl)){
+        reject(new Error('Logo 必须是 base64 图片 Data URL'));
+        return;
+      }
+      const image = new Image();
+      image.onload = () => {
+        logoData = dataUrl;
+        const ratio = image.naturalWidth / image.naturalHeight;
+        logoAspectRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 72 / 44;
+        update();
+        resolve();
+      };
+      image.onerror = () => reject(new Error('Logo 图片无法加载'));
+      image.src = dataUrl;
+    });
+  }
 
   function getLayoutSpec(){
     const layout = $('layout').value;
@@ -945,14 +993,7 @@
   $('templateRow').addEventListener('click', (e) => {
     const card = e.target.closest('.template-card');
     if(!card) return;
-    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
-    card.classList.add('active');
-    const t = templates[card.dataset.template];
-    $('bgColor').value = t.bg;
-    $('accentColor').value = t.accent;
-    $('titleColor').value = t.title;
-    $('textColor').value = t.text;
-    $('lineColor').value = t.line;
+    applyTemplate(card.dataset.template);
     update();
   });
 
@@ -973,16 +1014,7 @@
     const file = e.target.files && e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        logoData = reader.result;
-        const ratio = image.naturalWidth / image.naturalHeight;
-        logoAspectRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 72 / 44;
-        update();
-      };
-      image.src = reader.result;
-    };
+    reader.onload = () => setLogoDataUrl(reader.result).catch(error => alert(error.message));
     reader.readAsDataURL(file);
   });
 
@@ -1010,29 +1042,127 @@
 
   function safeName(){ return ($('filename').value || '蓝皮书封面').replace(/[\\/:*?"<>|]/g, '-'); }
 
+  const agentPrompt = [
+    '请帮我使用 Bluebook Cover Generator 为我生成蓝皮书、白皮书或研究报告封面，并将 PNG 图片保存到本地。',
+    '',
+    '请你自行完成以下工作：',
+    '1. 检查本机是否已安装 OpenCLI：运行 `command -v opencli` 和 `opencli --version`。',
+    '2. 如果未安装 OpenCLI，使用 `npm install -g @jackwener/opencli` 安装；如果环境权限策略要求确认，先向我申请执行许可。',
+    '3. 运行 `opencli doctor` 检查 Browser Bridge。如果浏览器扩展尚未连接，明确告诉我需要完成的连接步骤。',
+    '4. 安装或更新蓝皮书生成器 OpenCLI 插件：',
+    '   `opencli plugin install github:cnzhihao/bluebook-cover-generator/opencli-plugin`',
+    '   如果已经安装，则运行 `opencli plugin update bluebook-cover-generator`。',
+    '5. 安装对应的 Agent Skill。优先使用你环境中的 skill-installer；如果没有，则从',
+    '   `https://github.com/cnzhihao/bluebook-cover-generator/tree/main/skills/bluebook-cover-generator`',
+    '   获取并安装 `bluebook-cover-generator` skill 到当前 Agent 的 skills 目录。',
+    '6. 完整读取并严格遵循该 skill 的 `SKILL.md` workflow。不要退化为逐项点击网页、截图裁切或只给我命令让我自己执行。',
+    '7. 如果我还没有提供主题、报告文件、机构、作者、Logo 或输出路径，请根据 skill 规则主动提炼可推断内容，只询问无法可靠推断的必要信息，不能编造署名。',
+    '8. 使用 `opencli bluebook-cover-generator generate ... -f json` 完成调用，生成 PNG 并保存到本地。',
+    '9. 验证返回的文件路径真实存在、状态为 `ok`、尺寸正确，然后向我报告 PNG 的绝对路径、尺寸和所用模板。',
+    '',
+    '现在请先完成环境自查和 skill/plugin 安装，然后按照 skill workflow 继续完成蓝皮书封面生成。'
+  ].join('\n');
+
+  function copyText(text){
+    if(navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied ? Promise.resolve() : Promise.reject(new Error('浏览器不支持自动复制'));
+  }
+
+  $('copyAgentPromptBtn').addEventListener('click', () => {
+    copyText(agentPrompt)
+      .then(() => alert('已复制 agent 提示词，请粘贴给你的 agent，就可以让 Agent 自行完成蓝皮书封面的生成'))
+      .catch(error => alert(`复制失败：${error.message}`));
+  });
+
+  function exportPng(scale){
+    const numericScale = Number(scale);
+    if(![1,2,3].includes(numericScale)) return Promise.reject(new Error('PNG 导出倍率必须是 1、2 或 3'));
+    const svgStr = getSvgString();
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const svgBlob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(svgBlob);
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 800 * numericScale;
+          canvas.height = 1131 * numericScale;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/png');
+          resolve({
+            base64:dataUrl.slice(dataUrl.indexOf(',') + 1),
+            width:canvas.width,
+            height:canvas.height
+          });
+        } catch(error) {
+          reject(error);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('PNG 导出失败，请检查 Logo 图片是否有效'));
+      };
+      img.src = url;
+    });
+  }
+
+  async function applyConfig(config = {}){
+    if(config.template !== undefined) applyTemplate(config.template);
+    textControlIds.forEach(id => {
+      if(config[id] !== undefined) $(id).value = String(config[id]);
+    });
+    rangeIds.forEach(id => {
+      if(config[id] === undefined) return;
+      $(id).value = String(config[id]);
+      $(id+'Num').value = String(config[id]);
+    });
+    ['showTags','showBorder'].forEach(id => {
+      if(config[id] !== undefined) $(id).checked = Boolean(config[id]);
+    });
+    if(config.exportScale !== undefined) $('exportScale').value = String(config.exportScale);
+    if(config.filename !== undefined) $('filename').value = String(config.filename);
+    if(config.logoDataUrl !== undefined) await setLogoDataUrl(config.logoDataUrl);
+    update();
+    return getConfig();
+  }
+
+  function getConfig(){
+    const config = {};
+    textControlIds.forEach(id => { config[id] = $(id).value; });
+    rangeIds.forEach(id => { config[id] = Number($(id).value); });
+    ['showTags','showBorder'].forEach(id => { config[id] = $(id).checked; });
+    config.template = document.querySelector('.template-card.active')?.dataset.template || null;
+    config.exportScale = Number($('exportScale').value);
+    config.filename = $('filename').value;
+    config.hasLogo = Boolean(logoData);
+    return config;
+  }
+
   $('exportSvgBtn').addEventListener('click', () => {
     const svgStr = getSvgString();
     downloadBlob(new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'}), safeName() + '.svg');
   });
 
   $('exportPngBtn').addEventListener('click', () => {
-    const svgStr = getSvgString();
-    const scale = +$('exportScale').value;
-    const img = new Image();
-    const svgBlob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
-    const url = URL.createObjectURL(svgBlob);
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 800 * scale;
-      canvas.height = 1131 * scale;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      canvas.toBlob(blob => downloadBlob(blob, safeName() + '.png'), 'image/png');
-    };
-    img.onerror = () => { alert('导出失败：请尝试先导出 SVG，或移除异常 Logo 后重试。'); URL.revokeObjectURL(url); };
-    img.src = url;
+    exportPng(+$('exportScale').value)
+      .then(result => downloadBlob(
+        new Blob([Uint8Array.from(atob(result.base64), c => c.charCodeAt(0))], {type:'image/png'}),
+        safeName() + '.png'
+      ))
+      .catch(error => alert(`导出失败：${error.message}`));
   });
 
   $('resetBtn').addEventListener('click', () => {
@@ -1040,6 +1170,7 @@
     location.reload();
   });
 
+  window.bluebookCoverGenerator = {applyConfig, getConfig, exportPng};
   update();
 })();
 </script>

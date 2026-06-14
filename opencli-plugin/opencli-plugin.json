@@ -1,0 +1,6 @@
+{
+  "name": "bluebook-cover-generator",
+  "version": "0.1.0",
+  "opencli": ">=1.7.22",
+  "description": "通过网页生成蓝皮书、白皮书和研究报告 PNG 封面"
+}

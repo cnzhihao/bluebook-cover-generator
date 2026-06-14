@@ -1,0 +1,38 @@
+{
+  "skill_name": "bluebook-cover-generator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "给“2026 中国企业 AI Agent 应用现状”做一张正式蓝皮书封面，出品方是未来企业研究院，保存到 ./covers/agent-bluebook.png。",
+      "expected_output": "主动补齐正式标题、副标题、英文标题和关键词，使用 blueGold 模板，通过 OpenCLI 生成并报告本地 PNG。",
+      "files": [],
+      "expectations": [
+        "使用 opencli bluebook-cover-generator generate",
+        "使用 -f json 并指定 PNG 输出路径",
+        "不编造作者或 Logo"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把我提供的研究报告做成浅色学术风格的白皮书封面，作者和机构沿用文档内容。",
+      "expected_output": "从报告提炼封面文案和署名，选择 light 模板，生成 PNG 并验证结果。",
+      "files": ["evals/files/sample-report.md"],
+      "expectations": [
+        "选择 light 模板",
+        "从文档提取而不是编造机构和作者",
+        "生成后验证返回文件存在"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "为绿色供应链智库报告生成封面，使用 ./brand/logo.png，居中版式，3 倍图，输出 ./dist/green-report.png。",
+      "expected_output": "选择 green 模板，传入 Logo、center 版式和 3× 倍率，生成指定 PNG。",
+      "files": [],
+      "expectations": [
+        "使用 green 模板和 center 版式",
+        "传入 --logo、--scale 3 和指定输出路径",
+        "使用 OpenCLI JSON 输出并报告结果"
+      ]
+    }
+  ]
+}

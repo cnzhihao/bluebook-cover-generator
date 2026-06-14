@@ -1,0 +1,9 @@
+{
+  "name": "opencli-plugin-bluebook-cover-generator",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "通过 OpenCLI 生成蓝皮书、白皮书和研究报告 PNG 封面",
+  "peerDependencies": {
+    "@jackwener/opencli": ">=1.7.22"
+  }
+}

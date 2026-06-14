@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80">
+  <rect width="160" height="80" rx="12" fill="#ffffff"/>
+  <circle cx="42" cy="40" r="24" fill="#0b2b4c"/>
+  <path d="M31 40h22M42 29v22" stroke="#e4bd3f" stroke-width="7" stroke-linecap="round"/>
+  <text x="76" y="48" fill="#0b2b4c" font-family="Arial, sans-serif" font-size="22" font-weight="700">LAB</text>
+</svg>
