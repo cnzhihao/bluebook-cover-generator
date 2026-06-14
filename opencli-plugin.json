@@ -1,0 +1,13 @@
+{
+  "version": "0.1.0",
+  "opencli": ">=1.7.22",
+  "description": "蓝皮书、白皮书和研究报告封面生成器 OpenCLI 插件",
+  "plugins": {
+    "bluebook-cover-generator": {
+      "path": "opencli-plugin",
+      "description": "通过网页生成蓝皮书、白皮书和研究报告 PNG 封面",
+      "version": "0.1.0",
+      "opencli": ">=1.7.22"
+    }
+  }
+}
